@@ -1,0 +1,10 @@
+<h1>Uploadede filer</h1>
+<ul>
+  <li *ngFor="let fileName of fileList$ | async">
+    <!-- async pipen subscriber til fileList$
+    og returnerer den sidste value den har emitted. -->
+    {{ fileName }}&nbsp;&nbsp;
+    <span class="hover" (click)="download(fileName)">Download</span>&nbsp;
+    <span class="hover" (click)="remove(fileName)">Slet</span>
+  </li>
+</ul>
