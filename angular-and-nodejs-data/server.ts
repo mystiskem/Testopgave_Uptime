@@ -29,15 +29,22 @@ const {
 
 // Upload directory path
 const userFiles = './user_upload/';
-
 const fs = require('fs');
+
+// listFiles sættes til callBack objektet, som indeholder et array med filnavnene fra ./user_upload.
+const listFiles = (callBack) => {
+  return fs.readdir('./user_upload', callBack);
+};
 
 // Our Universal express-engine (found @ https://github.com/angular/universal/tree/master/modules/express-engine)
 app.engine(
   'html',
   ngExpressEngine({
     bootstrap: AppServerModuleNgFactory,
-    providers: [provideModuleMap(LAZY_MODULE_MAP)]
+    providers: [
+      provideModuleMap(LAZY_MODULE_MAP),
+      {provide: 'LIST_FILES', useValue: listFiles} // Provider listFiles til ngExpressEngine?
+    ]
   })
 );
 
@@ -49,7 +56,7 @@ app.put('/files', (req, res) => {
   const file = req.body;
   // Erstatter 'data: og alt derefter op til ',' med en tom string, så der kun er ren data tilbage.
   const base64data = file.content.replace(/^data:.*,/, '');
-  // Skriver base64data til filen og forsøger at sende filen.
+  // Skriver base64data til filen og forsøger at sende/uploade filen.
   fs.writeFile(userFiles + file.name, base64data, err => {
     if (err) {
       console.log(err);
@@ -77,12 +84,10 @@ app.get('*', (req, res) => {
   res.render('index', { req });
 });
 
-app.delete('./files/**', (req, res) => {
+// * Delete endpoint
+app.delete('/files/**', (req, res) => {
   // Extracter substringen efter index 7 og erstatter alle forekomster af %20 med en tom string. (Hvorfor lige 7?)
-  const fileNameTest = req.url();
   const fileName = req.url.substring(7).replace(/%20/g, '');
-  // ? Console.log(fileName);
-  // ? Console.log(fileNameTest);
   // Fjerner filen (er ikke sikker på hvordan fileName ser ud her).
   fs.unlink(userFiles + fileName, err => {
     if (err) {
@@ -95,6 +100,7 @@ app.delete('./files/**', (req, res) => {
   });
 });
 
-// Sørger for at alle Get requests til /files/** endpointet (er det ikke /files dog?) behandles som static hosting,
+// * Get
+// Sørger for at alle Get requests til /files/** endpointet behandles som static hosting,
 // fra userFiles (user_upload) mappen.
 app.use('/files', express.static(userFiles));
